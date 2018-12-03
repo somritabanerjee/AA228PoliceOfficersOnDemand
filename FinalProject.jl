@@ -1,4 +1,4 @@
-using Pkg, DataFrames, CSV, Printf,DataStructures
+using Pkg, DataFrames, CSV, Printf,DataStructures, Plots
 
 struct Action2
     stateToMoveFrom::Tuple{Int64, Int64}
@@ -81,15 +81,14 @@ function dist(s, s0)
 return abs(s[1]-s0[1])+abs(s[2]-s0[2])
 end
 
-function findReward(S, action::Action2)
+function findReward(S, action::Action2, wtParam)
 # computes reward for a given grid state and action
 s = action.stateToMoveFrom
 s0 = action.stateToMoveTo
-weight = 1
 reward = 0;
 reward -= dist(s, s0)*action.numPoliceOfficersToMove
 Snew=applyAction(S, action)
-reward += weight*sum(Snew[Snew.<0])
+reward += wtParam*sum(Snew[Snew.<0])
 return reward
 end
 
@@ -106,7 +105,7 @@ end
 
 
 
-function pickOptimalAction(S,needystateIdx,highestSurplusList,closestSurplusList)
+function pickOptimalAction(S,needystateIdx,highestSurplusList,closestSurplusList, wtParam)
 totallist = [highestSurplusList;closestSurplusList];
 numActions=length(totallist);
 possibleactions = Vector{Action2}(undef,numActions)
@@ -115,7 +114,7 @@ for i in 1:numActions
     cell = totallist[i]
     numPoliceOfficersToMove = min(abs(S[needystateIdx...]),S[cell...])
     action = Action2(cell,needystateIdx,numPoliceOfficersToMove)
-    rewards[i] = findReward(S, action)
+    rewards[i] = findReward(S, action, wtParam)
     possibleactions[i] = action
 end
 optimalactionind = argmax(rewards)
@@ -124,7 +123,7 @@ return optimalaction
 end
 
 
-function main(hour,P,C,threshold)
+function main(hour,P,C,threshold, wtParam)
 S = P-C;
 num = 5
 needyqueue = findNeediestStates(S,threshold);
@@ -134,7 +133,7 @@ while !isempty(needyqueue)
     highestSurplusList = findHighestSurplusStates(S,num)
     needystateIdx = needystate.first;
     closestSurplusList = findClosestSurplusStates(S,num,needystateIdx)
-    bestaction = pickOptimalAction(S,needystateIdx,highestSurplusList,closestSurplusList)
+    bestaction = pickOptimalAction(S,needystateIdx,highestSurplusList,closestSurplusList, wtParam)
     push!(actionlist,bestaction)
     Snew=applyAction(S,bestaction)
     show(bestaction.stateToMoveFrom)
@@ -145,14 +144,14 @@ Pnew=C+S
 return actionlist,Pnew
 end
 
-function findHourlyPolicy(PInit,CAllHours,threshold)
+function findHourlyPolicy(PInit,CAllHours,threshold, wtParam)
     policylist = Vector{Vector{Action2}}(undef,0)
     Plist=Vector{Array{Float64,2}}(undef,0);
     P=PInit
     push!(Plist,P)
     for hour in 1:24
         C=CAllHours[:,:,hour];
-        (actionlist, Pnew) = main(hour,P,C,threshold)
+        (actionlist, Pnew) = main(hour,P,C,threshold, wtParam)
         push!(policylist,actionlist)
         push!(Plist,Pnew)
         P=Pnew
@@ -272,8 +271,9 @@ end
 # fill!(PInit,1/(lat*long))
 # hour=1;
 # threshold = -0.001
-# (policylist,Plist)=main(hour,PInit,CAllHours[:,:,hour],threshold)
-# (policylist,Plist)=findHourlyPolicy(PInit,CAllHours,threshold)
+# wtParam = 1
+# (policylist,Plist)=main(hour,PInit,CAllHours[:,:,hour],threshold, wtParam)
+# (policylist,Plist)=findHourlyPolicy(PInit,CAllHours,threshold, wtParam)
 # for h=1:24
 #     hourlyP=Plist[h];
 #     name=string("PMatrixHour",h,".csv");
@@ -289,15 +289,53 @@ PInit=zeros(lat,long)
 fill!(PInit,1/(lat*long))
 hour=1;
 threshold = -0.001
-(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
+wtParam=1
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold, wtParam)
 # for h=1:24
 #     hourlyP=Plist[h];
 #     name=string("PMatrixWeightedHour",h,".csv");
 #     CSV.write(name,DataFrame(hourlyP))
 # end
 intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001.txt")
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001Param1.txt")
 threshold = -0.01
-(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold, wtParam)
 intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01.txt")
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01Param1.txt")
+
+# Changing parameter to 5
+threshold = -0.001
+wtParam=5
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold, wtParam)
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001Param5.txt")
+threshold = -0.01
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold, wtParam)
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01Param5.txt")
+
+# Changing parameter to 5
+threshold = -0.001
+wtParam=10
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold, wtParam)
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001Param10.txt")
+threshold = -0.01
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold, wtParam)
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01Param10.txt")
+
+
+
+# gr()
+# timesteps=[ir[1] for ir in intermediateRewards]
+# rwds=[ir[2] for ir in intermediateRewards]
+# plot([1],[1])
+# for hr=1:24
+#     idxs=(timesteps.<hr) .& (timesteps.>=hr-1)
+#     gr()
+#     plot!(timesteps[idxs], rwds[idxs])
+# end
+# yvalues=collect(-0.680:0.01:-0.575)
+# xvalues=ones(length(yvalues),1)
+# plot!(xvalues,yvalues)
