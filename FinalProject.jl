@@ -127,7 +127,7 @@ end
 function main(hour,P,C)
 S = P-C;
 num = 5
-threshold = -0.01
+threshold = -0.001
 needyqueue = findNeediestStates(S,threshold);
 actionlist = Vector{Action2}(undef,0)
 while !isempty(needyqueue)
