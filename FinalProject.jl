@@ -146,12 +146,12 @@ Pnew=C+S
 return actionlist,Pnew
 end
 
-function findHourlyPolicy(PAllHours,CAllHours)
+function findHourlyPolicy(PInit,CAllHours)
     policylist = Vector{Vector{Action2}}(undef,0)
     Plist=Vector{Array{Float64,2}}(undef,0);
-    P=PAllHours[:,:,1]
+    P=PInit
     push!(Plist,P)
-    for hour = 1:24
+    for hour in 1:24
         C=CAllHours[:,:,hour];
         (actionlist, Pnew) = main(hour,P,C)
         push!(policylist,actionlist)
@@ -159,6 +159,44 @@ function findHourlyPolicy(PAllHours,CAllHours)
         P=Pnew
     end
     return policylist,Plist
+end
+
+function evaluatePolicy(policylist::Vector{Vector{Action2}},sizeOfGrid,Plist,CAllHours)
+    intermediateRewards=Vector{Tuple{Float64,Float64}}(undef,0)
+    for hour in 1:24
+        C=CAllHours[:,:,hour]
+        P=Plist[hour]
+        Sinit=P-C
+        policyForThisHour=policylist[hour]
+        policyWithDurations=Vector{Tuple{Action2,Float64}}(undef,length(policyForThisHour))
+        for i=1:length(policyForThisHour)
+            action=policyForThisHour[i];
+            timeForAction=findTimeForAction(action,sizeOfGrid);
+            policyWithDurations[i]=(action,timeForAction)
+        end
+        sort!(policyWithDurations, by = x -> x[2])
+        sortedDurations=[x[2] for x in policyWithDurations]
+        idxTimesteps=findlast.(isequal.(unique(sortedDurations)), [sortedDurations])
+        actionsApplied=0;
+        S=Sinit
+        for t in idxTimesteps
+            timestepT=(hour-1)+sortedDurations[t]
+            for act = actionsApplied+1:t
+                actionToApply=policyWithDurations[act][1]
+                Snew=applyAction(S, actionToApply)
+                S=Snew
+            end
+            policyRewardAtTimestep = sum(S[S.<0])
+            push!(intermediateRewards,tuple(timestepT,policyRewardAtTimestep))
+            actionsApplied=t
+        end
+    end
+    return intermediateRewards
+end
+
+function findTimeForAction(action::Action2, sizeOfGrid::Int64)
+    factor= dist((1,1),(sizeOfGrid,sizeOfGrid))
+    return (dist(action.stateToMoveFrom,action.stateToMoveTo)/factor)
 end
 
 # hour=1;
@@ -218,31 +256,34 @@ function getCWeighted(crime_data::Matrix,grid_size) ### GETS CRIME MATRIX
     return C
 end
 
-data=CSV.File("2018_Crime_Datafloortimelatlong_40x40.csv") |> DataFrame;
-crime_data=convert(Array,data)
-CAllHours=getC(crime_data,40)
-(lat,long,hr)=size(CAllHours)
-PAllHours=zeros(lat,long,hr)
-fill!(PAllHours,1/(lat*long))
-hour=1;
-(policylist,Plist)=main(hour,PAllHours[:,:,hour],CAllHours[:,:,hour])
-(policylist,Plist)=findHourlyPolicy(PAllHours,CAllHours)
-for h=1:24
-    hourlyP=Plist[h];
-    name=string("PMatrixHour",h,".csv");
-    CSV.write(name,DataFrame(hourlyP))
-end
+# data=CSV.File("2018_Crime_Datafloortimelatlong_40x40.csv") |> DataFrame;
+# crime_data=convert(Array,data)
+# sizeOfGrid=40;
+# CAllHours=getC(crime_data,sizeOfGrid)
+# (lat,long,hr)=size(CAllHours)
+# PInit=zeros(lat,long)
+# fill!(PInit,1/(lat*long))
+# hour=1;
+# (policylist,Plist)=main(hour,PInit,CAllHours[:,:,hour])
+# (policylist,Plist)=findHourlyPolicy(PInit,CAllHours)
+# for h=1:24
+#     hourlyP=Plist[h];
+#     name=string("PMatrixHour",h,".csv");
+#     CSV.write(name,DataFrame(hourlyP))
+# end
 
 data_wt=CSV.File("2018_Crime_Data(floortime,lat,long_40x40)_weighted.csv") |> DataFrame;
 crime_data_wt=convert(Array,data_wt)
-CAllHoursWeighted=getCWeighted(crime_data_wt,40)
+sizeOfGrid=40;
+CAllHoursWeighted=getCWeighted(crime_data_wt,sizeOfGrid)
 (lat,long,hr)=size(CAllHoursWeighted)
-PAllHoursWeighted=zeros(lat,long,hr)
-fill!(PAllHoursWeighted,1/(lat*long))
+PInit=zeros(lat,long)
+fill!(PInit,1/(lat*long))
 hour=1;
-(policylist,Plist)=findHourlyPolicy(PAllHoursWeighted,CAllHoursWeighted)
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted)
 for h=1:24
     hourlyP=Plist[h];
     name=string("PMatrixWeightedHour",h,".csv");
     CSV.write(name,DataFrame(hourlyP))
 end
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
