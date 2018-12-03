@@ -1,5 +1,10 @@
 using Pkg, DataFrames, CSV, Printf,DataStructures
-Pkg.add("DataStructures")
+
+struct Action2
+    stateToMoveFrom::Tuple{Int64, Int64}
+    stateToMoveTo::Tuple{Int64, Int64}
+    numPoliceOfficersToMove::Float64
+end
 
 function findNeediestStates(S,threshold)
 sizeS = size(S)
@@ -98,11 +103,7 @@ return Snew
 end
 
 
-struct Action2
-    stateToMoveFrom::Tuple{Int64, Int64}
-    stateToMoveTo::Tuple{Int64, Int64}
-    numPoliceOfficersToMove::Float64
-end
+
 
 
 function pickOptimalAction(S,needystateIdx,highestSurplusList,closestSurplusList)
@@ -137,22 +138,60 @@ while !isempty(needyqueue)
     bestaction = pickOptimalAction(S,needystateIdx,highestSurplusList,closestSurplusList)
     push!(actionlist,bestaction)
     Snew=applyAction(S,bestaction)
+    show(bestaction.stateToMoveFrom)
     S=Snew
     needyqueue = findNeediestStates(S,threshold);
 end
 return actionlist
 end
 
-function findHourlyPolicy()
+function findHourlyPolicy(P,C)
     policylist = Vector{Vector{Action2}}(undef,0)
     for hour = 1:24
         actionlist = main(hour,P,C)
         push!(policylist,actionlist)
         # visualization
     end
+    return policylist
 end
 
+# hour=1;
+# P=rand(5,5,24);
+# C=rand(5,5,24);
+# main(hour,P,C)
+
+function getC(crime_data::Matrix,grid_size) ### GETS CRIME MATRIX
+    matrix4=crime_data
+    n,m = size(matrix4)
+    C = zeros(grid_size,grid_size,24)
+    for i = 1:n
+        lat = matrix4[i,3]
+        long = matrix4[i,4]
+        hour = matrix4[i,1]+1
+        C[lat,long,hour] += 1
+    end
+    total_hourly_crime = zeros(24)
+    for h = 1:24
+        total_hourly_crime[h] = sum(C[:,:,h])
+    end
+    for latitude = 1:grid_size
+        for longitude = 1:grid_size
+            for h = 1:24
+                if C[latitude,longitude,h] != 0
+                    C[latitude,longitude,h] = C[latitude,longitude,h]/total_hourly_crime[h]
+                end
+            end
+        end
+    end
+    return C
+end
+
+data=CSV.File("2018_Crime_Datafloortimelatlong_40x40.csv") |> DataFrame;
+crime_data=convert(Array,data)
+C=getC(crime_data,40)
+(lat,long,hr)=size(C)
+P=zeros(lat,long,hr)
+fill!(P,1/(lat*long))
 hour=1;
-P=rand(5,5,24);
-C=rand(5,5,24);
 main(hour,P,C)
+findHourlyPolicy(P,C)
