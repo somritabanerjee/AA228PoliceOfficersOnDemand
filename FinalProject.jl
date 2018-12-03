@@ -124,10 +124,9 @@ return optimalaction
 end
 
 
-function main(hour,P,C)
+function main(hour,P,C,threshold)
 S = P-C;
 num = 5
-threshold = -0.001
 needyqueue = findNeediestStates(S,threshold);
 actionlist = Vector{Action2}(undef,0)
 while !isempty(needyqueue)
@@ -146,14 +145,14 @@ Pnew=C+S
 return actionlist,Pnew
 end
 
-function findHourlyPolicy(PInit,CAllHours)
+function findHourlyPolicy(PInit,CAllHours,threshold)
     policylist = Vector{Vector{Action2}}(undef,0)
     Plist=Vector{Array{Float64,2}}(undef,0);
     P=PInit
     push!(Plist,P)
     for hour in 1:24
         C=CAllHours[:,:,hour];
-        (actionlist, Pnew) = main(hour,P,C)
+        (actionlist, Pnew) = main(hour,P,C,threshold)
         push!(policylist,actionlist)
         push!(Plist,Pnew)
         P=Pnew
@@ -256,6 +255,14 @@ function getCWeighted(crime_data::Matrix,grid_size) ### GETS CRIME MATRIX
     return C
 end
 
+function write_policy_eval(policyEvals::Vector{Tuple{Float64,Float64}}, filename)
+    open(filename, "w") do io
+        for i=1:length(policyEvals)
+            @printf(io, "%f, %f\n", policyEvals[i][1], policyEvals[i][2])
+        end
+    end
+end
+
 # data=CSV.File("2018_Crime_Datafloortimelatlong_40x40.csv") |> DataFrame;
 # crime_data=convert(Array,data)
 # sizeOfGrid=40;
@@ -264,8 +271,9 @@ end
 # PInit=zeros(lat,long)
 # fill!(PInit,1/(lat*long))
 # hour=1;
-# (policylist,Plist)=main(hour,PInit,CAllHours[:,:,hour])
-# (policylist,Plist)=findHourlyPolicy(PInit,CAllHours)
+# threshold = -0.001
+# (policylist,Plist)=main(hour,PInit,CAllHours[:,:,hour],threshold)
+# (policylist,Plist)=findHourlyPolicy(PInit,CAllHours,threshold)
 # for h=1:24
 #     hourlyP=Plist[h];
 #     name=string("PMatrixHour",h,".csv");
@@ -280,10 +288,16 @@ CAllHoursWeighted=getCWeighted(crime_data_wt,sizeOfGrid)
 PInit=zeros(lat,long)
 fill!(PInit,1/(lat*long))
 hour=1;
-(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted)
-for h=1:24
-    hourlyP=Plist[h];
-    name=string("PMatrixWeightedHour",h,".csv");
-    CSV.write(name,DataFrame(hourlyP))
-end
+threshold = -0.001
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
+# for h=1:24
+#     hourlyP=Plist[h];
+#     name=string("PMatrixWeightedHour",h,".csv");
+#     CSV.write(name,DataFrame(hourlyP))
+# end
 intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001.txt")
+threshold = -0.01
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01.txt")
