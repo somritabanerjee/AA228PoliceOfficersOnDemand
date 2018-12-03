@@ -75,8 +75,6 @@ function isRealGridCell(lat,long,S)
     end
 end
 
-
-
 function dist(s, s0)
 return abs(s[1]-s0[1])+abs(s[2]-s0[2])
 end
@@ -100,10 +98,6 @@ Snew[s...] = S[s...] - action.numPoliceOfficersToMove
 Snew[s0...] = S[s0...] + action.numPoliceOfficersToMove
 return Snew
 end
-
-
-
-
 
 function pickOptimalAction(S,needystateIdx,highestSurplusList,closestSurplusList, wtParam)
 totallist = [highestSurplusList;closestSurplusList];
@@ -197,11 +191,6 @@ function findTimeForAction(action::Action2, sizeOfGrid::Int64)
     return (dist(action.stateToMoveFrom,action.stateToMoveTo)/factor)
 end
 
-# hour=1;
-# P=rand(5,5,24);
-# C=rand(5,5,24);
-# main(hour,P,C)
-
 function getC(crime_data::Matrix,grid_size) ### GETS CRIME MATRIX
     matrix4=crime_data
     n,m = size(matrix4)
@@ -262,6 +251,7 @@ function write_policy_eval(policyEvals::Vector{Tuple{Float64,Float64}}, filename
     end
 end
 
+### Unweighted crime data
 # data=CSV.File("2018_Crime_Datafloortimelatlong_40x40.csv") |> DataFrame;
 # crime_data=convert(Array,data)
 # sizeOfGrid=40;
@@ -291,6 +281,7 @@ hour=1;
 threshold = -0.001
 wtParam=1
 (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold, wtParam)
+### Required to publish P matrices
 # for h=1:24
 #     hourlyP=Plist[h];
 #     name=string("PMatrixWeightedHour",h,".csv");
@@ -326,7 +317,7 @@ intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighte
 write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01Param10.txt")
 
 
-
+### Attempting to plot but not successfully
 # gr()
 # timesteps=[ir[1] for ir in intermediateRewards]
 # rwds=[ir[2] for ir in intermediateRewards]
