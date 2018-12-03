@@ -125,9 +125,9 @@ end
 
 
 function main(hour,P,C)
-S = P[:,:,hour]-C[:,:,hour];
+S = P-C;
 num = 5
-threshold = -0.02
+threshold = -0.01
 needyqueue = findNeediestStates(S,threshold);
 actionlist = Vector{Action2}(undef,0)
 while !isempty(needyqueue)
@@ -142,17 +142,23 @@ while !isempty(needyqueue)
     S=Snew
     needyqueue = findNeediestStates(S,threshold);
 end
-return actionlist
+Pnew=C+S
+return actionlist,Pnew
 end
 
-function findHourlyPolicy(P,C)
+function findHourlyPolicy(PAllHours,CAllHours)
     policylist = Vector{Vector{Action2}}(undef,0)
+    Plist=Vector{Array{Float64,2}}(undef,0);
+    P=PAllHours[:,:,1]
+    push!(Plist,P)
     for hour = 1:24
-        actionlist = main(hour,P,C)
+        C=CAllHours[:,:,hour];
+        (actionlist, Pnew) = main(hour,P,C)
         push!(policylist,actionlist)
-        # visualization
+        push!(Plist,Pnew)
+        P=Pnew
     end
-    return policylist
+    return policylist,Plist
 end
 
 # hour=1;
@@ -188,10 +194,15 @@ end
 
 data=CSV.File("2018_Crime_Datafloortimelatlong_40x40.csv") |> DataFrame;
 crime_data=convert(Array,data)
-C=getC(crime_data,40)
-(lat,long,hr)=size(C)
-P=zeros(lat,long,hr)
-fill!(P,1/(lat*long))
+CAllHours=getC(crime_data,40)
+(lat,long,hr)=size(CAllHours)
+PAllHours=zeros(lat,long,hr)
+fill!(PAllHours,1/(lat*long))
 hour=1;
-main(hour,P,C)
-findHourlyPolicy(P,C)
+(policylist,Plist)=main(hour,PAllHours[:,:,hour],CAllHours[:,:,hour])
+(policylist,Plist)=findHourlyPolicy(PAllHours,CAllHours)
+for h=1:24
+    hourlyP=Plist[h];
+    name=string("PMatrixHour",h,".csv");
+    CSV.write(name,DataFrame(hourlyP))
+end
