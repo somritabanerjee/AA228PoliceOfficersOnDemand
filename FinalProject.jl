@@ -160,7 +160,7 @@ function evaluatePolicy(policylist::Vector{Vector{Action2}},sizeOfGrid,Plist,CAl
     intermediateRewards=Vector{Tuple{Float64,Float64}}(undef,0)
     for hour in 1:24
         C=CAllHours[:,:,hour]
-        P=Plist[hour]
+        P=Plist[hour+1]
         Sinit=P-C
         policyForThisHour=policylist[hour]
         policyWithDurations=Vector{Tuple{Action2,Float64}}(undef,length(policyForThisHour))
@@ -313,16 +313,16 @@ intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighte
 write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01.txt")
 
 
-threshold = -0.1
+threshold = -0.03
 (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
 ### Required to publish P matrices
 for h=1:25
     hourlyP=Plist[h];
-    name=string("PMatrixWeighted0.1Hour",h-1,".csv");
+    name=string("PMatrixWeighted0.03Hour",h-1,".csv");
     CSV.write(name,DataFrame(hourlyP))
 end
 intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.1.txt")
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.03.txt")
 
 threshold = -0.005
 (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
