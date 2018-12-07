@@ -157,7 +157,7 @@ function findHourlyPolicy(PInit,CAllHours,threshold)
 end
 
 function evaluatePolicy(policylist::Vector{Vector{Action2}},sizeOfGrid,Plist,CAllHours)
-    intermediateRewards=Vector{Tuple{Float64,Float64}}(undef,0)
+    intermediateScores=Vector{Tuple{Float64,Float64}}(undef,0)
     for hour in 1:24
         C=CAllHours[:,:,hour]
         P=Plist[hour+1]
@@ -181,12 +181,12 @@ function evaluatePolicy(policylist::Vector{Vector{Action2}},sizeOfGrid,Plist,CAl
                 Snew=applyAction(S, actionToApply)
                 S=Snew
             end
-            policyRewardAtTimestep = sum(S[S.<0])
-            push!(intermediateRewards,tuple(timestepT,policyRewardAtTimestep))
+            policyScoreAtTimestep = sum(S[S.<0])
+            push!(intermediateScores,tuple(timestepT,policyScoreAtTimestep))
             actionsApplied=t
         end
     end
-    return intermediateRewards
+    return intermediateScores
 end
 
 function findTimeForAction(action::Action2, sizeOfGrid::Int64)
@@ -297,8 +297,8 @@ for h=1:25
     name=string("PMatrixWeighted0.001Hour",h-1,".csv");
     CSV.write(name,DataFrame(hourlyP))
 end
-intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001.txt")
+intermediateScores= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateScores,"policyEvaluationForWeightedCrime0.001.txt")
 
 
 threshold = -0.01
@@ -309,8 +309,8 @@ for h=1:25
     name=string("PMatrixWeighted0.01Hour",h-1,".csv");
     CSV.write(name,DataFrame(hourlyP))
 end
-intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01.txt")
+intermediateScores= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateScores,"policyEvaluationForWeightedCrime0.01.txt")
 
 
 threshold = -0.03
@@ -321,8 +321,8 @@ for h=1:25
     name=string("PMatrixWeighted0.03Hour",h-1,".csv");
     CSV.write(name,DataFrame(hourlyP))
 end
-intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.03.txt")
+intermediateScores= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateScores,"policyEvaluationForWeightedCrime0.03.txt")
 
 threshold = -0.005
 (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
@@ -332,13 +332,13 @@ for h=1:25
     name=string("PMatrixWeighted0.005Hour",h-1,".csv");
     CSV.write(name,DataFrame(hourlyP))
 end
-intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.005.txt")
+intermediateScores= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateScores,"policyEvaluationForWeightedCrime0.005.txt")
 
 ### Attempting to plot but not successfully
 # gr()
-# timesteps=[ir[1] for ir in intermediateRewards]
-# rwds=[ir[2] for ir in intermediateRewards]
+# timesteps=[ir[1] for ir in intermediateScores]
+# rwds=[ir[2] for ir in intermediateScores]
 # plot([1],[1])
 # for hr=1:24
 #     idxs=(timesteps.<hr) .& (timesteps.>=hr-1)
