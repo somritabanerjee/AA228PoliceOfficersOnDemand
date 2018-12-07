@@ -279,6 +279,7 @@ CAllHoursWeighted=getCWeighted(crime_data_wt,sizeOfGrid)
 PInit=zeros(lat,long)
 fill!(PInit,1/(lat*long))
 hour=1;
+
 threshold = -0.001
 (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
 ### Required to publish P matrices
@@ -287,21 +288,43 @@ for h=1:24
     name=string("PMatrixWeighted0.001Hour",h,".csv");
     CSV.write(name,DataFrame(hourlyP))
 end
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001.txt")
 
-# intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-# write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.001.txt")
-# threshold = -0.01
-# (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
-# intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-# write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01.txt")
-# threshold = -0.1
-# (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
-# intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-# write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.1.txt")
-# threshold = -0.005
-# (policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
-# intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
-# write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.005.txt")
+
+threshold = -0.01
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
+### Required to publish P matrices
+for h=1:24
+    hourlyP=Plist[h];
+    name=string("PMatrixWeighted0.01Hour",h,".csv");
+    CSV.write(name,DataFrame(hourlyP))
+end
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.01.txt")
+
+
+threshold = -0.1
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
+### Required to publish P matrices
+for h=1:24
+    hourlyP=Plist[h];
+    name=string("PMatrixWeighted0.1Hour",h,".csv");
+    CSV.write(name,DataFrame(hourlyP))
+end
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.1.txt")
+
+threshold = -0.005
+(policylist,Plist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
+### Required to publish P matrices
+for h=1:24
+    hourlyP=Plist[h];
+    name=string("PMatrixWeighted0.005Hour",h,".csv");
+    CSV.write(name,DataFrame(hourlyP))
+end
+intermediateRewards= evaluatePolicy(policylist,sizeOfGrid,Plist,CAllHoursWeighted)
+write_policy_eval(intermediateRewards,"policyEvaluationForWeightedCrime0.005.txt")
 
 ### Attempting to plot but not successfully
 # gr()
