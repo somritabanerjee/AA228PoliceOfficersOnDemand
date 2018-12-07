@@ -275,12 +275,7 @@ end
 #     CSV.write(name,DataFrame(hourlyP))
 # end
 
-### Required to publish C matrices
-# for h=1:24
-#     hourlyCweighted=CAllHoursWeighted[:,:,h];
-#     name=string("CMatrixWeightedHour",h,".csv");
-#     CSV.write(name,DataFrame(hourlyCweighted))
-# end
+
 
 data_wt=CSV.File("2018_Crime_Data(floortime,lat,long_40x40)_weighted.csv") |> DataFrame;
 crime_data_wt=convert(Array,data_wt)
@@ -290,6 +285,12 @@ CAllHoursWeighted=getCWeighted(crime_data_wt,sizeOfGrid)
 PInit=zeros(lat,long)
 fill!(PInit,1/(lat*long))
 hour=1;
+### Required to publish C matrices
+for h=1:24
+    hourlyCweighted=CAllHoursWeighted[:,:,h];
+    name=string("CMatrixWeightedHour",h,".csv");
+    CSV.write(name,DataFrame(hourlyCweighted))
+end
 
 thresholds=[-0.001 -0.01 -0.03 -0.005];
 for threshold in thresholds
