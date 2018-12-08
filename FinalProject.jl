@@ -296,7 +296,7 @@ thresholds=[-0.001 -0.01 -0.03 -0.005];
 for threshold in thresholds
     show(threshold)
     (policylist,Plist,Slist)=findHourlyPolicy(PInit,CAllHoursWeighted,threshold)
-    ### Required to publish P matrices
+    ### Required to publish P and S matrices
     for h=1:25
         hourlyP=Plist[h];
         name=string("PMatrixWeighted",abs(threshold),"Hour",h-1,".csv");

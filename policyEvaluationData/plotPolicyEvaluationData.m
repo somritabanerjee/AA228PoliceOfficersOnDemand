@@ -23,10 +23,10 @@ hold on
 plot(policyEvaluation0_01(:,1),policyEvaluation0_01(:,2),'Color',color3,'LineWidth', 2)
 hold on
 plot(policyEvaluation0_03(:,1),policyEvaluation0_03(:,2),'Color',color4,'LineWidth', 2)
-legend({'Threshold= -0.001','Threshold= -0.005','Threshold= -0.01','Threshold= -0.03'},'FontSize',12)
-xlabel('Timestep (hours)','FontSize',16)
-ylabel('Policy evaluation score','FontSize',16)
-title('Policy evaluation for different thresholds','FontSize',16)
+legend({'Threshold= -0.001','Threshold= -0.005','Threshold= -0.01','Threshold= -0.03'},'FontSize',20)
+xlabel('Timestep (hours)','FontSize',20)
+ylabel('Policy evaluation score','FontSize',20)
+title('Policy evaluation for different thresholds','FontSize',24)
 xlim([0 24])
 set(gca,'XTick',0:1:24)
 grid on
